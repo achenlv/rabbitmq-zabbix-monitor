@@ -2,20 +2,20 @@ import requests
 
 
 class ZabbixClient:
-  def __init__(self, server, user, password):
+  def __init__(self, server, username, password):
     self.server = server
-    self.user = user
+    self.username = username
     self.password = password
     self.auth_token = self.authenticate()
 
   def authenticate(self):
-    url = f"{self.server}/api_jsonrpc"
+    url = f"{self.server}/api_jsonrpc.php"
     headers = {'Content-Type': 'application/json'}
     payload = {
       "jsonrpc": "2.0",
       "method": "user.login",
       "params": {
-        "user": self.user,
+        "username": self.username,
         "password": self.password
       },
       "id": 1
@@ -59,3 +59,47 @@ class ZabbixClient:
     }
     response = requests.post(url, json=payload, headers=headers)
     return response.json()
+  
+  def get_last_item_value(self, item_id):
+    url = f"{self.server}/api_jsonrpc.php"
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+      "jsonrpc": "2.0",
+      "method": "history.get",
+      "params": {
+        "output": "extend",
+        "history": 3,
+        "itemids": item_id,
+        "sortfield": "clock",
+        "sortorder": "DESC",
+        "limit": 1
+      },
+      "auth": self.auth_token,
+      "id": 1
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    result = response.json().get('result')
+    if result:
+      return int(result[0]['value'])
+    return 0
+
+  def get_event_details(self, event_id):
+    url = f"{self.server}/api_jsonrpc.php"
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+      "jsonrpc": "2.0",
+      "method": "event.get",
+      "params": {
+        "output": "extend",
+        "eventids": event_id,
+        "selectTags": "extend"
+      },
+      "auth": self.auth_token,
+      "id": 1
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    print(f"Response from get_event_details: {response.json()}")
+    result = response.json().get('result')
+    if result:
+      return result[0]
+    return None
