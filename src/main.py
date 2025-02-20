@@ -4,10 +4,12 @@ import schedule
 from rabbitmq_client import RabbitMQClient
 from zabbix_client import ZabbixClient
 from email_client import EmailClient
-from utils import load_env
+from utils import load_env_variables as load_env
+
+
 
 def check_queue_item_count():
-  env_vars = load_env()
+  env_vars = load_env('../config/config.env')
   
   rabbitmq_client = RabbitMQClient(
     host=env_vars['RABBIT_HOST'],
@@ -40,7 +42,7 @@ def check_queue_item_count():
     )
 
 def main():
-  load_env()  # Load environment variables
+  load_env('../config/config.env')  # Load environment variables
   schedule.every().monday.at("09:00").do(check_queue_item_count)
   schedule.every().tuesday.at("09:00").do(check_queue_item_count)
   schedule.every().wednesday.at("09:00").do(check_queue_item_count)
