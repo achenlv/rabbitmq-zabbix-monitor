@@ -1,2 +1,4 @@
 **/__pycache__/ # Ignore Python cache
 config/config.env
+config/config.env
+**/config.env

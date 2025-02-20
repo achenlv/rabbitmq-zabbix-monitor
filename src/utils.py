@@ -22,8 +22,8 @@ def load_env_variables(env_file):
   }
 
   for key, value in env_vars.items():
-      if value is None:
-          raise ValueError(f"Environment variable '{key}' not found.")
+    if value is None:
+      raise ValueError(f"Environment variable '{key}' not found.")
 
   return env_vars
 
