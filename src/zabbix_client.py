@@ -21,7 +21,11 @@ class ZabbixClient:
       "id": 1
     }
     response = requests.post(url, json=payload, headers=headers)
-    return response.json().get('result')
+    # print(f"Authentication response: {response.json()}")
+    auth_token = response.json().get('result')
+    if not auth_token:
+      raise ValueError("Authentication failed. Please check your credentials.")
+    return auth_token
 
   def set_trapper_item(self, host_name, item_key, item_value):
     url = f"{self.server}/api_jsonrpc"
@@ -33,8 +37,8 @@ class ZabbixClient:
         "name": f"Item for {item_key}",
         "key_": item_key,
         "host": host_name,
-        "type": 2,  # Zabbix trapper
-        "value_type": 3  # Numeric (unsigned)
+        "type": 2,  
+        "value_type": 3 
       },
       "auth": self.auth_token,
       "id": 1
@@ -83,7 +87,7 @@ class ZabbixClient:
       return int(result[0]['value'])
     return 0
 
-  def get_event_details(self, event_id):
+  def get_event_details(self, host, trigger_id):
     url = f"{self.server}/api_jsonrpc.php"
     headers = {'Content-Type': 'application/json'}
     payload = {
@@ -91,7 +95,11 @@ class ZabbixClient:
       "method": "event.get",
       "params": {
         "output": "extend",
-        "eventids": event_id,
+        "host": host,
+        "objectids": trigger_id,
+        "sortfield": ["clock"],
+        "sortorder": "DESC",
+        "limit": 1,
         "selectTags": "extend"
       },
       "auth": self.auth_token,
@@ -103,3 +111,26 @@ class ZabbixClient:
     if result:
       return result[0]
     return None
+  
+  def get_trigger_details(self, trigger_id):
+    url = f"{self.server}/api_jsonrpc.php"
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+      "jsonrpc": "2.0",
+      "method": "trigger.get",
+      "params": {
+        "output": "extend",
+        "triggerids": trigger_id,
+        "selectHosts": ["host"],
+        "selectItems": ["itemid"],
+        "selectTags": "extend"
+      },
+      "auth": self.auth_token,
+      "id": 1
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    print(f"Response from get_trigger_details: {response.json()}")
+    result = response.json().get('result')
+    if result:
+      return result[0]
+    return None  

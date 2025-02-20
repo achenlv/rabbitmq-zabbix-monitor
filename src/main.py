@@ -36,10 +36,32 @@ def check_queue_item_count():
     print(f"Last recorded item count: {last_count}")
     
     if (current_count > last_count) or (current_count == last_count):
-      # zabbix_client.set_trapper_item(current_count)
+      # trigger_details = zabbix_client.get_trigger_details(env_vars['ZABBIX_TRIGGER_ID'])
+      # event_details = zabbix_client.get_event_details(env_vars['ZABBIX_TRIGGER_ID'])
+      trigger_details = zabbix_client.get_trigger_details(40130)
+      event_details = zabbix_client.get_event_details(10660, 40130)
+      problem_start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(event_details['clock'])))
+      context = {
+        'problem_start_time':  problem_start_time if event_details else 'N/A',
+        'problem_name': trigger_details['description'] if trigger_details else 'N/A',
+        # 'problem_name': event_details['name'] if event_details else trigger_details['description'] if trigger_details else 'N/A',
+        'host': trigger_details['hosts'][0]['host'] if trigger_details else 'N/A',
+        'severity': trigger_details['priority'] if trigger_details else 'N/A',
+        'operational_data': current_count,
+        'original_problem_id': event_details['eventid'] if event_details else 'N/A',
+        'event_tags_details': event_details['tags'] if event_details else 'N/A'         
+        # 'problem_start_time': time.strftime('%H:%M:%S on %Y.%m.%d'),
+        # 'problem_name': f"RabbitMQ Queue Size drift [{env_vars['ZABBIX_HOST_NAME']}, {env_vars['RABBIT_VHOST']}, {env_vars['RABBIT_QUEUE']}]",
+        # 'host': env_vars['ZABBIX_HOST_NAME'],
+        # 'severity': 'Average',
+        # 'operational_data': current_count,
+        # 'original_problem_id': event_details['eventid'] if event_details else 'N/A',
+        # 'event_tags_details': event_details['tags'] if event_details else 'N/A'
+      }
+      email_body = email_client.read_template(os.path.join(os.path.dirname(__file__), '../config/email_template.txt'), context)
       email_client.send_email(
-          subject="RabbitMQ Queue Item Count Increased",
-          body=f"The item count in the queue has increased from {last_count} to {current_count}."
+        subject="RabbitMQ Queue Item Count Increased",
+        body=email_body
       )
       print("Email sent: The item count in the queue has increased.")
     else:
