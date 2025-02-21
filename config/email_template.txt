@@ -1,8 +1,0 @@
-Problem started at {problem_start_time}
-Problem name: {problem_name}
-Host: {host}
-Severity: {severity}
-Operational data: {operational_data}
-Original problem ID: {original_problem_id}
-
-Details: {event_tags_details}

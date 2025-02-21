@@ -1,0 +1,17 @@
+[Unit]
+Description=RabbitMQ Queue Monitor
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/rabbitmq-monitor
+User=rabbitmq-monitor
+Group=rabbitmq-monitor
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+
+[Timer]
+OnCalendar=*:0/5
+Unit=rabbitmq-monitor.service

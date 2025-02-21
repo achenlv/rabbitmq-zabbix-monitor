@@ -1,0 +1,71 @@
+{
+    "rabbitmq": {
+        "clusters": [
+            {
+                "nodes": ["rabbit1.example.com", "rabbit2.example.com"],
+                "user": "monitor",
+                "password": "secret",
+                "port": 15672
+            },
+            {
+                "nodes": ["rabbit3.example.com", "rabbit4.example.com"],
+                "user": "monitor",
+                "password": "secret",
+                "port": 15672
+            }
+        ]
+    },
+    "zabbix": {
+        "url": "http://zabbix.example.com",
+        "user": "admin",
+        "password": "zabbix",
+        "port": 10051
+    },
+    "email": {
+        "smtp_server": "smtp.example.com",
+        "smtp_port": 587,
+        "smtp_user": "alerts@example.com",
+        "smtp_password": "secret",
+        "from_address": "alerts@example.com",
+        "templates": {
+            "drift": "/etc/rabbitmq-monitor/templates/drift_alert.html",
+            "threshold": "/etc/rabbitmq-monitor/templates/threshold_alert.html",
+            "error": "/etc/rabbitmq-monitor/templates/error_alert.html"
+        },
+        "alerts": {
+            "drift": {
+                "template": "drift",
+                "subject": "Queue Size Drift Alert: {vhost}/{queue}",
+                "to": ["team@example.com"],
+                "cc": ["manager@example.com"]
+            },
+            "threshold": {
+                "template": "threshold",
+                "subject": "Queue Size Threshold Exceeded: {vhost}/{queue}",
+                "to": ["watchman@example.com"],
+                "cc": ["emergency@example.com"]
+            },
+            "error": {
+                "template": "error",
+                "subject": "RabbitMQ Monitoring Error: {error_type}",
+                "to": ["sysadmin@example.com"],
+                "cc": []
+            }
+        }
+    },
+    "monitoring": {
+        "threshold": 15,
+        "queues": [
+            {
+                "cluster_node": "rabbit1.example.com",
+                "vhost": "VHOST1",
+                "queue": "QUEUE1"
+            },
+            {
+                "cluster_node": "rabbit3.example.com",
+                "vhost": "VHOST2",
+                "queue": "QUEUE2"
+            }
+        ]
+    }
+}
