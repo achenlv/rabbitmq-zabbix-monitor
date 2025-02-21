@@ -1,3 +1,4 @@
 config/config.env
 **/__pycache__/ 
 **/config.env
+scripts/queue_length.sh
