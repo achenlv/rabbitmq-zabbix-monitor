@@ -2,3 +2,4 @@ pika
 requests
 python-dotenv
 schedule
+pyzabbix

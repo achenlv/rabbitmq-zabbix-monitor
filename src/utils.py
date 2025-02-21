@@ -13,6 +13,7 @@ def load_env_variables(env_file):
     'ZABBIX_USER': os.getenv('ZABBIX_USER'),
     'ZABBIX_PASS': os.getenv('ZABBIX_PASS'),
     'ZABBIX_HOST_NAME': os.getenv('ZABBIX_HOST_NAME'),
+    'ZABBIX_HOST': os.getenv('ZABBIX_HOST'),
     'ZABBIX_ITEM_ID': os.getenv('ZABBIX_ITEM_ID'),
     'ZABBIX_TRIGGER_ID': os.getenv('ZABBIX_TRIGGER_ID'),
     'ZABBIX_HOST_ID': os.getenv('ZABBIX_HOST_ID'),
