@@ -1,0 +1,37 @@
+{
+  "rabbitmq": {
+    "nodes": [
+      "rabbitmq_node1",
+      "rabbitmq_node2"
+    ]
+  },
+  "monitoring": {
+    "queues": [
+      {
+        "node": "rabbitmq_node1",
+        "vhost": "VHOST1",
+        "queue": "QUEUE1"
+      },
+      {
+        "node": "rabbitmq_node2",
+        "vhost": "VHOST2",
+        "queue": "QUEUE2"
+      }
+    ]
+  },
+  "emails": {
+    "drift": {
+      "to": "integration_team@example.com",
+      "cc": "optional_cc@example.com"
+    },
+    "threshold": {
+      "to": "watchman@example.com",
+      "cc": "optional_cc@example.com"
+    }
+  },
+  "email_templates": {
+    "drift": "/path/to/drift_template.txt",
+    "threshold": "/path/to/threshold_template.txt"
+  },
+  "threshold": 15
+}

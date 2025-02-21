@@ -1,0 +1,11 @@
+[Unit]
+Description=RabbitMQ Zabbix Monitor
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /c:/work/rabbitmq-zabbix-monitor/monitor.py
+Environment=CONFIG_PATH=/c:/work/rabbitmq-zabbix-monitor/config.json
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
