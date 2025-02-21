@@ -17,9 +17,16 @@
     },
     "zabbix": {
         "url": "http://zabbix.example.com",
+        "server": "zabbix.example.com",
+        "port": 10051,
         "user": "admin",
         "password": "zabbix",
-        "port": 10051
+        "tls_connect": "psk",
+        "tls_psk_identity": "agent-psk",
+        "tls_psk_file": "/etc/zabbix/psk.key",
+        "tls_ca_file": "/etc/zabbix/ca.pem",
+        "tls_cert_file": "/etc/zabbix/client.crt",
+        "tls_key_file": "/etc/zabbix/client.key"
     },
     "email": {
         "smtp_server": "smtp.example.com",

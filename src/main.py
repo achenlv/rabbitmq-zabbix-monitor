@@ -103,11 +103,12 @@ class QueueMonitor:
                 cluster_node = monitored_queue['cluster_node']
                 vhost = monitored_queue['vhost']
                 queue = monitored_queue['queue']
+                zabbix_host = monitored_queue['zabbix_host']
                 
                 count = self._check_queue(cluster_node, vhost, queue)
                 if count is not None:
                     logger.info(f"Processing {cluster_node} {vhost}/{queue}: {count} messages")
-                    self.process_queue_metrics(vhost, queue, count, cluster_node)
+                    self.process_queue_metrics(vhost, queue, count, zabbix_host)
                         
         except Exception as e:
             logger.error(f"Error in monitoring loop: {str(e)}")

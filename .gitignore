@@ -5,3 +5,4 @@ scripts/queue_length.sh
 config/config.json
 log/monitor.log
 log/*
+config/psk.key
