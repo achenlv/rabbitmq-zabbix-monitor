@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 import logging
 import sys
+import os
 from datetime import datetime
 from typing import Dict, Optional, Tuple
 
-from src.config import Config
-from src.rabbitmq_client import RabbitMQClient
-from src.zabbix_client import ZabbixClient
-from src.email_sender import EmailSender
-from src.utils import setup_logging, get_alert_key
+from config import Config
+from rabbitmq_client import RabbitMQClient
+from zabbix_client import ZabbixClient
+from email_sender import EmailSender
+from utils import setup_logging, get_alert_key
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +115,7 @@ class QueueMonitor:
 
 def main():
     setup_logging()
-    monitor = QueueMonitor("/etc/rabbitmq-monitor/config.json")
+    monitor = QueueMonitor(os.path.join(os.path.dirname(__file__), '../config/config.json'))
     monitor.run()
 
 if __name__ == "__main__":

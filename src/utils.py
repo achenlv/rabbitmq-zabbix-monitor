@@ -1,4 +1,5 @@
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
 def setup_logging():
@@ -12,9 +13,9 @@ def setup_logging():
     
     # File handler
     fh = RotatingFileHandler(
-        '/var/log/rabbitmq-monitor/monitor.log',
+        os.path.join(os.path.dirname(__file__), '../log/monitor.log'),
         maxBytes=10485760,  # 10MB
-        backupCount=30
+        backupCount=7
     )
     fh.setFormatter(formatter)
     logger.addHandler(fh)

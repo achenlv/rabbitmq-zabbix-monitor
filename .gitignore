@@ -3,3 +3,5 @@ config/config.env
 **/config.env
 scripts/queue_length.sh
 config/config.json
+log/monitor.log
+log/*
