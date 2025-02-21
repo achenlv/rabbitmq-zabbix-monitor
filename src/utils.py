@@ -14,6 +14,8 @@ def load_env_variables(env_file):
     'ZABBIX_PASS': os.getenv('ZABBIX_PASS'),
     'ZABBIX_HOST_NAME': os.getenv('ZABBIX_HOST_NAME'),
     'ZABBIX_ITEM_ID': os.getenv('ZABBIX_ITEM_ID'),
+    'ZABBIX_TRIGGER_ID': os.getenv('ZABBIX_TRIGGER_ID'),
+    'ZABBIX_HOST_ID': os.getenv('ZABBIX_HOST_ID'),
     'RABBIT_HOST': os.getenv('RABBIT_HOST'),
     'RABBIT_USER': os.getenv('RABBIT_USER'),
     'RABBIT_PASS': os.getenv('RABBIT_PASS'),

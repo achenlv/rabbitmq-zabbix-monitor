@@ -27,7 +27,7 @@ class ZabbixClient:
       raise ValueError("Authentication failed. Please check your credentials.")
     return auth_token
 
-  def set_trapper_item(self, host_name, item_key, item_value):
+  def create_trapper_item(self, host_name, item_key):
     url = f"{self.server}/api_jsonrpc"
     headers = {'Content-Type': 'application/json'}
     payload = {
@@ -39,6 +39,22 @@ class ZabbixClient:
         "host": host_name,
         "type": 2,  
         "value_type": 3 
+      },
+      "auth": self.auth_token,
+      "id": 1
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    return response.json()
+
+  def set_trapper_item_value(self, item_id, item_value):
+    url = f"{self.server}/api_jsonrpc"
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+      "jsonrpc": "2.0",
+      "method": "item.update",
+      "params": {
+        "itemid": item_id,
+        "lastvalue": item_value
       },
       "auth": self.auth_token,
       "id": 1
@@ -64,7 +80,7 @@ class ZabbixClient:
     response = requests.post(url, json=payload, headers=headers)
     return response.json()
   
-  def get_last_item_value(self, item_id):
+  def get_last_item_value(self, item_id, limit=1):
     url = f"{self.server}/api_jsonrpc.php"
     headers = {'Content-Type': 'application/json'}
     payload = {
@@ -76,7 +92,7 @@ class ZabbixClient:
         "itemids": item_id,
         "sortfield": "clock",
         "sortorder": "DESC",
-        "limit": 1
+        "limit": limit
       },
       "auth": self.auth_token,
       "id": 1
@@ -84,7 +100,7 @@ class ZabbixClient:
     response = requests.post(url, json=payload, headers=headers)
     result = response.json().get('result')
     if result:
-      return int(result[0]['value'])
+      return [res['value'] for res in result[:limit]]
     return 0
 
   def get_event_details(self, host, trigger_id):
