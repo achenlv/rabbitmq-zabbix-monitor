@@ -6,3 +6,4 @@ config/config.json
 log/monitor.log
 log/*
 config/psk.key
+_old/*

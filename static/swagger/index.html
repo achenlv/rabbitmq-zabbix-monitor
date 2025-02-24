@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Swagger UI</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.52.5/swagger-ui.css" rel="stylesheet">
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.52.5/swagger-ui-bundle.js"></script>
+  <script>
+    const ui = SwaggerUIBundle({
+      url: '/swagger.json',
+      dom_id: '#swagger-ui',
+    });
+  </script>
+</body>
+</html>
+````
+
+After creating the `index.html` file, the Swagger UI should be accessible at `http://127.0.0.1:5000/swagger`.
