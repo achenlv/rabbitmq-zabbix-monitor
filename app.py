@@ -42,7 +42,7 @@ def create_app():
       "version": "0.0.1",
       "contact": {
         "name": "API Support",
-        "email": "support@example.com"
+        "email": "ext-agris.pudans@intrum.com"
       }
     },
     "schemes": ["http", "https"],
