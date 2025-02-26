@@ -64,3 +64,5 @@ def send_email():
   """
   # Dummy implementation
   return jsonify({'message': 'Email sent successfully'})
+
+
