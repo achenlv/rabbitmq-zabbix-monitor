@@ -273,3 +273,94 @@ class MonitoringService:
       'zabbix_result': result,
       'success': result.get('success', False)
     }  
+
+  def check_queue_drift(self) -> List[Dict]:
+    """
+    Check all monitored queues for drift and threshold violations
+    
+    Returns:
+        List of dictionaries with drift and threshold alerts
+    """
+    alerts = []
+    
+    for queue_config in self.monitoring_config.get('queues', []):
+      vhost = queue_config.get('vhost')
+      queue_name = queue_config.get('queue')
+      zabbix_host = queue_config.get('zabbix_host')
+      
+      if not all([vhost, queue_name, zabbix_host]):
+        continue
+      
+      # Create the Zabbix item key for this queue
+      item_key = f"rabbitmq.test.queue.size[{vhost},{queue_name}]"
+      
+      # Get the last two values from Zabbix
+      history = self.zabbix_client.get_item_history(zabbix_host, item_key, 2)
+      
+      if len(history) < 2:
+        # Not enough history to determine drift
+        continue
+      
+      # Get the values (newest first)
+      latest_value = float(history[0].get('value', 0))
+      previous_value = float(history[1].get('value', 0))
+      
+      # Check for drift (latest value > previous value)
+      has_drift = latest_value > previous_value
+      
+      # Check for threshold violation
+      threshold_exceeded = latest_value > self.threshold
+      
+      # Queue context for notification
+      queue_context = {
+        'vhost': vhost,
+        'queue': queue_name,
+        'latest_value': latest_value,
+        'previous_value': previous_value,
+        'threshold': self.threshold,
+        'zabbix_host': zabbix_host
+      }
+      
+      # Record alerts
+      if has_drift:
+        alerts.append({
+          'type': 'drift',
+          'queue_info': queue_context
+        })
+      
+      if threshold_exceeded:
+        alerts.append({
+          'type': 'threshold',
+          'queue_info': queue_context
+        })
+    
+    return alerts
+
+  def process_queue_alerts(self) -> Dict:
+    """
+    Process all queue alerts (drift and threshold) and send notifications
+    
+    Returns:
+        Dict with results of the alerts processing
+    """
+    # Check for drift and threshold violations
+    alerts = self.check_queue_drift()
+    
+    # Send notifications for each alert
+    notification_results = []
+    for alert in alerts:
+      alert_type = alert.get('type')
+      queue_info = alert.get('queue_info', {})
+      
+      result = self.notification_client.send_alert(alert_type, queue_info)
+      notification_results.append({
+        'type': alert_type,
+        'queue': f"{queue_info.get('vhost')}/{queue_info.get('queue')}",
+        'result': result
+      })
+    
+    return {
+      'alerts_detected': len(alerts),
+      'notifications_sent': len(notification_results),
+      'results': notification_results
+    }  

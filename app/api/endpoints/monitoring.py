@@ -64,3 +64,10 @@ def run_all_monitoring():
     'zabbix_result': result,
     'success': result.get('success', True)  # Default to true if no error
   })
+
+@bp.route('/check-drift', methods=['GET', 'POST'])
+def check_queue_drift():
+  """Check all monitored queues for drift and send notifications"""
+  result = monitoring_service.process_queue_alerts()
+  
+  return jsonify(result)

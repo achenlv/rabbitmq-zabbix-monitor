@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .alert {{ 
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }}
+        .header {{
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            margin-bottom: 20px;
+        }}
+        .details {{
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }}
+    </style>
+</head>
+<body>
+    <div class="alert">
+        <div class="header">
+            <h2>Queue Size Drift Alert</h2>
+        </div>
+        <div class="details">
+            <p><strong>Cluster Node:</strong> {node}</p>
+            <p><strong>Virtual Host:</strong> {vhost}</p>
+            <p><strong>Queue Name:</strong> {queue}</p>
+            <p><strong>Previous Count:</strong> {previous_count}</p>
+            <p><strong>Current Count:</strong> {current_count}</p>
+            <p><strong>Time Detected:</strong> {timestamp}</p>
+        </div>
+        <p>Please investigate the cause of this queue size increase.</p>
+    </div>
+</body>
+</html>

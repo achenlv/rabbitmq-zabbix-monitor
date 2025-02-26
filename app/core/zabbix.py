@@ -273,3 +273,74 @@ class ZabbixClient:
       if os.path.exists(temp_file_path):
         os.unlink(temp_file_path)
       return {"success": False, "error": str(e)}
+    
+  def get_item_history(self, hostname: str, key: str, limit: int = 2) -> List[Dict]:
+    """
+    Get the most recent values for a specific item from Zabbix
+    
+    Args:
+        hostname: The host name in Zabbix
+        key: The item key
+        limit: Number of historical values to retrieve (default: 2)
+        
+    Returns:
+        List of dictionaries with historical values, newest first
+    """
+    if not self._auth:
+      self.authenticate()
+      
+    if not self._auth:
+      return []
+    
+    # First, get the host ID
+    host_result = self.get_host(hostname)
+    if not host_result.get("result"):
+      return []
+    
+    host_id = host_result.get("result")[0].get("hostid")
+    
+    # Then, get the item ID
+    item_params = {
+      "output": ["itemid", "key_", "lastvalue", "prevvalue"],
+      "hostids": host_id,
+      "filter": {
+        "key_": key
+      }
+    }
+    
+    item_result = self.api_call("item.get", item_params)
+    if not item_result.get("result"):
+      return []
+    
+    item_id = item_result.get("result")[0].get("itemid")
+    
+    # Get the history type (0 = numeric float, 3 = numeric unsigned)
+    item_type = item_result.get("result")[0].get("value_type", 3)
+    
+    # Get the history
+    history_params = {
+      "output": "extend",
+      "history": item_type,
+      "itemids": item_id,
+      "sortfield": "clock",
+      "sortorder": "DESC",
+      "limit": limit
+    }
+    
+    history_result = self.api_call("history.get", history_params)
+    
+    if not history_result.get("result"):
+      # If no history, use the lastvalue and prevvalue from item.get
+      item = item_result.get("result")[0]
+      return [
+        {
+          "value": item.get("lastvalue"),
+          "clock": "latest"
+        },
+        {
+          "value": item.get("prevvalue"),
+          "clock": "previous"
+        }
+      ]
+    
+    return history_result.get("result", [])
