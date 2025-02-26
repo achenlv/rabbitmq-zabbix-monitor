@@ -2,9 +2,9 @@ import os
 import subprocess
 import json
 import tempfile
+import platform
+import shutil
 from typing import Dict, List, Any, Optional
-import requests
-from requests.auth import HTTPBasicAuth
 
 class ZabbixClient:
   def __init__(self, config: Dict):
@@ -26,38 +26,50 @@ class ZabbixClient:
     
     # Authentication token
     self._auth = None
+  
+  def _find_zabbix_sender(self) -> Optional[str]:
+    """Find the zabbix_sender executable"""
+    # Check if it's in the PATH
+    zabbix_sender_path = shutil.which("zabbix_sender")
+    if zabbix_sender_path:
+      return zabbix_sender_path
+      
+    # Common locations
+    if platform.system() == "Windows":
+      for path in [
+        r"C:\Program Files\Zabbix Agent\zabbix_sender.exe",
+        r"C:\Program Files\Zabbix Agent 2\zabbix_sender.exe",
+        r"C:\zabbix\bin\zabbix_sender.exe"
+      ]:
+        if os.path.exists(path):
+          return path
+    else:  # Linux/Mac
+      for path in [
+        "/usr/bin/zabbix_sender",
+        "/usr/local/bin/zabbix_sender",
+        "/usr/local/sbin/zabbix_sender"
+      ]:
+        if os.path.exists(path):
+          return path
     
+    return None
+  
   def _get_psk_file_path(self) -> Optional[str]:
-    """
-    Get a valid PSK file path for the current environment.
-    Will create a temporary PSK file if the configured file doesn't exist.
-    """
-    # Check if the configured PSK file exists
+    """Get the path to the PSK file"""
+    # Check Windows/default path first
     if self.tls_psk_file and os.path.exists(self.tls_psk_file):
       return self.tls_psk_file
     
     # Check Linux path if on Linux
-    if self.tls_psk_file_linux and os.path.exists(self.tls_psk_file_linux):
+    if platform.system() != "Windows" and self.tls_psk_file_linux and os.path.exists(self.tls_psk_file_linux):
       return self.tls_psk_file_linux
     
-    # If neither exist but we have a PSK key in config, create a temp file
-    if self.psk_key:
-      try:
-        # Create a temporary PSK file
-        tmp_dir = tempfile.gettempdir()
-        tmp_psk_path = os.path.join(tmp_dir, 'zabbix_psk.key')
-        
-        with open(tmp_psk_path, 'w') as f:
-          f.write(self.psk_key)
-        
-        # Make sure file permissions are secure
-        os.chmod(tmp_psk_path, 0o600)
-        
-        return tmp_psk_path
-      except Exception as e:
-        print(f"Failed to create temporary PSK file: {str(e)}")
-    
-    return None
+    # Return the configured path even if it doesn't exist
+    # This allows zabbix_sender to report the specific error
+    if platform.system() != "Windows" and self.tls_psk_file_linux:
+      return self.tls_psk_file_linux
+    else:
+      return self.tls_psk_file
   
   def authenticate(self) -> Optional[str]:
     """Authenticate with Zabbix API and get auth token"""
@@ -79,6 +91,7 @@ class ZabbixClient:
     }
     
     try:
+      import requests
       response = requests.post(self.api_url, json=payload)
       response.raise_for_status()
       data = response.json()
@@ -109,6 +122,7 @@ class ZabbixClient:
     }
     
     try:
+      import requests
       response = requests.post(self.api_url, json=payload)
       response.raise_for_status()
       return response.json()
@@ -129,28 +143,27 @@ class ZabbixClient:
   def send_value(self, hostname: str, key: str, value: Any) -> Dict:
     """
     Send a value to Zabbix using zabbix_sender with PSK authentication
-    """
-    # Create a temporary file for the data
-    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
-      temp_file.write(f"{hostname} {key} {value}")
-      temp_file_path = temp_file.name
     
-    # Build the command
-    cmd = ["zabbix_sender",
-           "-z", self.server,
-           "-p", str(self.port),
-           "-i", temp_file_path]
+    This uses the direct command format with -s, -k, -o parameters
+    """
+    # Find zabbix_sender
+    zabbix_sender_path = self._find_zabbix_sender()
+    if not zabbix_sender_path:
+      return {"success": False, "error": "zabbix_sender not found in PATH or common locations"}
+    
+    # Build the command similar to the Linux example
+    cmd = [
+      zabbix_sender_path,
+      "-z", self.server,
+      "-p", str(self.port),
+      "-s", hostname,
+      "-k", key,
+      "-o", str(value)
+    ]
     
     # Add TLS options if configured
     if self.tls_connect == "psk":
       psk_file_path = self._get_psk_file_path()
-      
-      if not psk_file_path:
-        os.unlink(temp_file_path)  # Clean up data file
-        return {
-          "success": False, 
-          "error": "PSK file not found and could not create temporary PSK file"
-        }
       
       cmd.extend([
         "--tls-connect", "psk",
@@ -159,50 +172,66 @@ class ZabbixClient:
       ])
     
     try:
+      # Print the command (for debugging)
+      print(f"Executing: {' '.join(cmd)}")
+      
       # Execute the command
       process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
       stdout, stderr = process.communicate()
       
-      # Clean up the temporary file
-      os.unlink(temp_file_path)
+      stdout_str = stdout.decode('utf-8')
+      stderr_str = stderr.decode('utf-8')
       
       if process.returncode == 0:
-        return {"success": True, "message": stdout.decode('utf-8')}
+        return {"success": True, "message": stdout_str}
       else:
-        return {"success": False, "error": stderr.decode('utf-8')}
+        return {
+          "success": False, 
+          "error": stderr_str,
+          "command": " ".join(cmd)
+        }
     except Exception as e:
-      # Clean up the temporary file
-      if os.path.exists(temp_file_path):
-        os.unlink(temp_file_path)
       return {"success": False, "error": str(e)}
   
   def send_values_to_zabbix(self, data_points: List[Dict]) -> Dict:
     """
     Send multiple values to Zabbix
     data_points: List of dictionaries with keys: host, key, value
+    
+    For multiple values, we still use the temporary file approach with -i
     """
+    if not data_points:
+      return {"success": True, "message": "No data points to send"}
+    
+    # If there's only one data point, use the direct method
+    if len(data_points) == 1:
+      point = data_points[0]
+      return self.send_value(point['host'], point['key'], point['value'])
+    
+    # For multiple points, use the batch file method
     # Create a temporary file for the data
     with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
       for point in data_points:
         temp_file.write(f"{point['host']} {point['key']} {point['value']}\n")
       temp_file_path = temp_file.name
     
+    # Find zabbix_sender
+    zabbix_sender_path = self._find_zabbix_sender()
+    if not zabbix_sender_path:
+      os.unlink(temp_file_path)  # Clean up
+      return {"success": False, "error": "zabbix_sender not found in PATH or common locations"}
+    
     # Build the command
-    cmd = ["zabbix_sender",
-           "-z", self.server,
-           "-p", str(self.port),
-           "-i", temp_file_path]
+    cmd = [
+      zabbix_sender_path,
+      "-z", self.server,
+      "-p", str(self.port),
+      "-i", temp_file_path
+    ]
     
     # Add TLS options if configured
     if self.tls_connect == "psk":
       psk_file_path = self._get_psk_file_path()
-      
-      if not psk_file_path:
-        os.unlink(temp_file_path)  # Clean up data file
-        return {
-          "success": False, 
-          "error": "PSK file not found and could not create temporary PSK file"
-        }
       
       cmd.extend([
         "--tls-connect", "psk",
@@ -211,6 +240,9 @@ class ZabbixClient:
       ])
     
     try:
+      # Print the command (for debugging)
+      print(f"Executing: {' '.join(cmd)}")
+      
       # Execute the command
       process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
       stdout, stderr = process.communicate()
@@ -218,10 +250,17 @@ class ZabbixClient:
       # Clean up the temporary file
       os.unlink(temp_file_path)
       
+      stdout_str = stdout.decode('utf-8')
+      stderr_str = stderr.decode('utf-8')
+      
       if process.returncode == 0:
-        return {"success": True, "message": stdout.decode('utf-8')}
+        return {"success": True, "message": stdout_str}
       else:
-        return {"success": False, "error": stderr.decode('utf-8')}
+        return {
+          "success": False, 
+          "error": stderr_str,
+          "command": " ".join(cmd)
+        }
     except Exception as e:
       # Clean up the temporary file
       if os.path.exists(temp_file_path):
