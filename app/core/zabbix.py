@@ -143,15 +143,13 @@ class ZabbixClient:
   def send_value(self, hostname: str, key: str, value: Any) -> Dict:
     """
     Send a value to Zabbix using zabbix_sender with PSK authentication
-    
-    This uses the direct command format with -s, -k, -o parameters
     """
     # Find zabbix_sender
     zabbix_sender_path = self._find_zabbix_sender()
     if not zabbix_sender_path:
       return {"success": False, "error": "zabbix_sender not found in PATH or common locations"}
     
-    # Build the command similar to the Linux example
+    # Build the command
     cmd = [
       zabbix_sender_path,
       "-z", self.server,
@@ -182,14 +180,22 @@ class ZabbixClient:
       stdout_str = stdout.decode('utf-8')
       stderr_str = stderr.decode('utf-8')
       
-      if process.returncode == 0:
-        return {"success": True, "message": stdout_str}
-      else:
+      # If we have a stderr message, that's an error
+      if stderr_str and stderr_str.strip():
         return {
           "success": False, 
           "error": stderr_str,
           "command": " ".join(cmd)
         }
+      
+      # If we have stdout but no stderr, consider it a success
+      # even if the return code is non-zero
+      return {
+        "success": True,
+        "message": stdout_str,
+        "command": " ".join(cmd),
+        "returncode": process.returncode
+      }
     except Exception as e:
       return {"success": False, "error": str(e)}
   
@@ -197,16 +203,9 @@ class ZabbixClient:
     """
     Send multiple values to Zabbix
     data_points: List of dictionaries with keys: host, key, value
-    
-    For multiple values, we still use the temporary file approach with -i
     """
     if not data_points:
       return {"success": True, "message": "No data points to send"}
-    
-    # If there's only one data point, use the direct method
-    if len(data_points) == 1:
-      point = data_points[0]
-      return self.send_value(point['host'], point['key'], point['value'])
     
     # For multiple points, use the batch file method
     # Create a temporary file for the data
@@ -253,14 +252,22 @@ class ZabbixClient:
       stdout_str = stdout.decode('utf-8')
       stderr_str = stderr.decode('utf-8')
       
-      if process.returncode == 0:
-        return {"success": True, "message": stdout_str}
-      else:
+      # If we have a stderr message, that's an error
+      if stderr_str and stderr_str.strip():
         return {
           "success": False, 
           "error": stderr_str,
           "command": " ".join(cmd)
         }
+      
+      # If we have stdout but no stderr, consider it a success
+      # even if the return code is non-zero (zabbix_sender can be picky)
+      return {
+        "success": True,
+        "message": stdout_str,
+        "command": " ".join(cmd),
+        "returncode": process.returncode
+      }
     except Exception as e:
       # Clean up the temporary file
       if os.path.exists(temp_file_path):

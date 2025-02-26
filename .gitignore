@@ -7,3 +7,4 @@ log/monitor.log
 log/*
 config/psk.key
 _old/*
+.venv/*
