@@ -287,6 +287,7 @@ class MonitoringService:
       vhost = queue_config.get('vhost')
       queue_name = queue_config.get('queue')
       zabbix_host = queue_config.get('zabbix_host')
+      cluster_node = queue_config.get('cluster_node')
       
       if not all([vhost, queue_name, zabbix_host]):
         continue
@@ -311,12 +312,18 @@ class MonitoringService:
       # Check for threshold violation
       threshold_exceeded = latest_value > self.threshold
       
-      # Queue context for notification
+      # Current timestamp for alerts
+      from datetime import datetime
+      current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+      
+      # Queue context for notification - using keys that match the template
       queue_context = {
+        'node': cluster_node,
         'vhost': vhost,
         'queue': queue_name,
-        'latest_value': latest_value,
-        'previous_value': previous_value,
+        'current_count': int(latest_value),
+        'previous_count': int(previous_value),
+        'timestamp': current_time,
         'threshold': self.threshold,
         'zabbix_host': zabbix_host
       }

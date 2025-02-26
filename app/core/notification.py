@@ -67,13 +67,21 @@ class NotificationClient:
     # Format the subject
     try:
       subject = subject_template.format(**context)
-    except Exception:
+    except Exception as e:
+      # If formatting fails, use the template as-is
       subject = subject_template
+      print(f"Subject formatting error: {str(e)}")
+    
     msg['Subject'] = subject
     
     # Format the email body
     try:
       body = template.substitute(**context)
+    except KeyError as e:
+      # Log the missing key and context
+      print(f"Template error - missing key: {str(e)}")
+      print(f"Available context keys: {list(context.keys())}")
+      return {"success": False, "error": f"Error formatting template: Missing key {str(e)}"}
     except Exception as e:
       return {"success": False, "error": f"Error formatting template: {str(e)}"}
     
@@ -90,6 +98,6 @@ class NotificationClient:
       smtp.sendmail(self.from_address, all_recipients, msg.as_string())
       smtp.quit()
       
-      return {"success": True, "message": f"Alert sent to {', '.join(all_recipients)}"}
+      return {"success": True, "message": f"Alert sent to {', '.join(to_addresses)}"}
     except Exception as e:
       return {"success": False, "error": f"Failed to send email: {str(e)}"}
