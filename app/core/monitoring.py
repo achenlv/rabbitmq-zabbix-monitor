@@ -310,7 +310,7 @@ class MonitoringService:
       has_drift = latest_value > previous_value
       
       # Check for threshold violation
-      threshold_exceeded = latest_value > self.threshold
+      threshold_exceeded = has_drift and (latest_value > self.threshold)
       
       # Current timestamp for alerts
       from datetime import datetime

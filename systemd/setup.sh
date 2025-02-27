@@ -58,6 +58,12 @@ ausearch -c 'python' --raw | audit2allow -M rabbitmq-zabbix-monitor
 # Install the policy
 semodule -i rabbitmq-zabbix-monitor.pp
 
+## or do just:
+sudo chcon -R -t bin_t /var/www/rabbitmq-zabbix-monitor/.venv/bin/
+sudo chcon -t bin_t /var/www/rabbitmq-zabbix-monitor/app.py
+sudo chcon -t bin_t /var/www/rabbitmq-zabbix-monitor/systemd/rabbitmq_zabbix_monitor.sh
+
+
 
 ### Caddy
 # Add the Caddy repository
