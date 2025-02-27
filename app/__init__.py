@@ -3,6 +3,7 @@ from app.core.config import Config
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+from flask_restx import Api
 
 def create_app():
   # Create Flask app
@@ -47,6 +48,45 @@ def create_app():
 
 
 
+#### Setting for openapi
+# # Initialize the API
+# api = Api(
+#   version='1.0',
+#   title='RabbitMQ-Zabbix Monitor API',
+#   description='API for monitoring RabbitMQ clusters and sending metrics to Zabbix',
+#   doc='/api/docs',
+#   prefix='/api'
+# )
+
+# # Create namespaces for each endpoint group
+# rabbitmq_ns = api.namespace('rabbitmq', description='RabbitMQ operations')
+# zabbix_ns = api.namespace('zabbix', description='Zabbix operations')
+# monitoring_ns = api.namespace('monitoring', description='Monitoring operations')
+
+# # Define common models
+# queue_model = api.model('Queue', {
+#   'vhost': api.fields.String(description='RabbitMQ virtual host'),
+#   'name': api.fields.String(description='Queue name'),
+#   'messages': api.fields.Integer(description='Number of messages in queue'),
+#   'consumers': api.fields.Integer(description='Number of consumers'),
+#   'state': api.fields.String(description='Queue state')
+# })
+
+# cluster_model = api.model('Cluster', {
+#   'id': api.fields.String(description='Cluster ID'),
+#   'description': api.fields.String(description='Cluster description'),
+#   'nodes': api.fields.List(api.fields.Raw, description='List of cluster nodes')
+# })
+
+# zabbix_data_point = api.model('ZabbixDataPoint', {
+#   'host': api.fields.String(required=True, description='Zabbix host name'),
+#   'key': api.fields.String(required=True, description='Item key'),
+#   'value': api.fields.String(required=True, description='Item value')
+# })
+
+
+
+#### Setting for service
 # # In app/__init__.py
 # def create_app():
 #     app = Flask(__name__)

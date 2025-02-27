@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, request
 from app.core.config import Config
 from app.core.rabbitmq import RabbitMQClient
+from flask_restx import Resource
+from app.api import rabbitmq_ns, queue_model, cluster_model
 
 bp = Blueprint('rabbitmq', __name__, url_prefix='/api/rabbitmq')
 
