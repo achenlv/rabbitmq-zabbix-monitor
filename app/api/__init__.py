@@ -36,5 +36,7 @@ zabbix_data_point = api.model('ZabbixDataPoint', {
 })
 
 # Import endpoints to register them with the API
-# This is critical for the operations to be visible in the Swagger UI
-from app.api.endpoints import rabbitmq, zabbix, monitoring
+# This is crucial for the swagger UI to pick up all endpoints
+import app.api.endpoints.rabbitmq
+import app.api.endpoints.zabbix
+import app.api.endpoints.monitoring

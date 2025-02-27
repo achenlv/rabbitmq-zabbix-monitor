@@ -1,8 +1,8 @@
 from flask import request
 from app.core.config import Config
 from app.core.zabbix import ZabbixClient
-from flask_restx import Resource
-from app.api import zabbix_ns, zabbix_data_point
+from flask_restx import Resource, fields
+from app.api import zabbix_ns, zabbix_data_point, api
 
 # Initialize configuration
 config = Config()
@@ -10,15 +10,15 @@ zabbix_client = ZabbixClient(config.get_config())
 
 # Define Zabbix-specific models
 host_model = zabbix_ns.model('Host', {
-  'hostid': zabbix_ns.fields.String(description='Host ID'),
-  'host': zabbix_ns.fields.String(description='Host name'),
-  'name': zabbix_ns.fields.String(description='Visible name'),
-  'status': zabbix_ns.fields.Integer(description='Host status')
+  'hostid': fields.String(description='Host ID'),
+  'host': fields.String(description='Host name'),
+  'name': fields.String(description='Visible name'),
+  'status': fields.Integer(description='Host status')
 })
 
 result_model = zabbix_ns.model('Result', {
-  'success': zabbix_ns.fields.Boolean(description='Operation success status'),
-  'message': zabbix_ns.fields.String(description='Result message or error')
+  'success': fields.Boolean(description='Operation success status'),
+  'message': fields.String(description='Result message or error')
 })
 
 @zabbix_ns.route('/hosts')

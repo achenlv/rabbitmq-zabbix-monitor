@@ -1,8 +1,8 @@
 from flask import request
 from app.core.config import Config
 from app.core.monitoring import MonitoringService
-from flask_restx import Resource
-from app.api import monitoring_ns
+from flask_restx import Resource, fields
+from app.api import monitoring_ns, api
 
 # Initialize configuration
 config = Config()
@@ -10,29 +10,29 @@ monitoring_service = MonitoringService(config.get_config())
 
 # Define monitoring-specific models
 monitoring_result_model = monitoring_ns.model('MonitoringResult', {
-  'metrics_collected': monitoring_ns.fields.Integer(description='Number of metrics collected'),
-  'data_points_sent': monitoring_ns.fields.Integer(description='Number of data points sent to Zabbix'),
-  'success': monitoring_ns.fields.Boolean(description='Operation success status'),
-  'zabbix_result': monitoring_ns.fields.Raw(description='Zabbix sender result')
+  'metrics_collected': fields.Integer(description='Number of metrics collected'),
+  'data_points_sent': fields.Integer(description='Number of data points sent to Zabbix'),
+  'success': fields.Boolean(description='Operation success status'),
+  'zabbix_result': fields.Raw(description='Zabbix sender result')
 })
 
 queue_config_model = monitoring_ns.model('QueueConfig', {
-  'cluster_node': monitoring_ns.fields.String(description='RabbitMQ node hostname'),
-  'vhost': monitoring_ns.fields.String(description='Virtual host'),
-  'queue': monitoring_ns.fields.String(description='Queue name'),
-  'zabbix_host': monitoring_ns.fields.String(description='Zabbix host name')
+  'cluster_node': fields.String(description='RabbitMQ node hostname'),
+  'vhost': fields.String(description='Virtual host'),
+  'queue': fields.String(description='Queue name'),
+  'zabbix_host': fields.String(description='Zabbix host name')
 })
 
 metrics_model = monitoring_ns.model('Metrics', {
-  'host': monitoring_ns.fields.String(description='Zabbix host'),
-  'metrics': monitoring_ns.fields.Raw(description='Collected metrics'),
-  'queue_info': monitoring_ns.fields.Raw(description='Queue information')
+  'host': fields.String(description='Zabbix host'),
+  'metrics': fields.Raw(description='Collected metrics'),
+  'queue_info': fields.Raw(description='Queue information')
 })
 
 drift_result_model = monitoring_ns.model('DriftResult', {
-  'alerts_detected': monitoring_ns.fields.Integer(description='Number of alerts detected'),
-  'notifications_sent': monitoring_ns.fields.Integer(description='Number of notifications sent'),
-  'results': monitoring_ns.fields.List(monitoring_ns.fields.Raw, description='Notification results')
+  'alerts_detected': fields.Integer(description='Number of alerts detected'),
+  'notifications_sent': fields.Integer(description='Number of notifications sent'),
+  'results': fields.List(fields.Raw, description='Notification results')
 })
 
 @monitoring_ns.route('/run')
@@ -124,4 +124,57 @@ class CheckDrift(Resource):
   @monitoring_ns.marshal_with(drift_result_model)
   def get(self):
     """Check drift (GET method for compatibility)"""
+    return self.post()
+  
+
+@monitoring_ns.route('/monitor-all-drift')
+class CompleteMonitoring(Resource):
+  @monitoring_ns.doc('complete_monitoring')
+  def post(self):
+    """
+    Comprehensive monitoring: collect metrics for ALL queues and check for drift
+    
+    This endpoint combines the functionality of both /metrics-all and /check-drift:
+    1. Collects metrics for all queues across all vhosts
+    2. Sends these metrics to Zabbix
+    3. Checks for queue size drift and threshold violations
+    4. Sends notification alerts if needed
+    """
+    # Part 1: Collect and send metrics (from /metrics-all and /run-all)
+    metrics = monitoring_service.collect_all_queue_metrics()
+    
+    # Prepare data for Zabbix
+    zabbix_data_points = []
+    for metric in metrics:
+      host = metric.get('host')
+      for key, value in metric.get('metrics', {}).items():
+        zabbix_data_points.append({
+          'host': host,
+          'key': key,
+          'value': value
+        })
+    
+    # Send data to Zabbix
+    zabbix_result = monitoring_service.zabbix_client.send_values_to_zabbix(zabbix_data_points)
+    
+    # Part 2: Check for drift and send alerts (from /check-drift)
+    drift_result = monitoring_service.process_queue_alerts()
+    
+    # Combine results
+    return {
+      'metrics_result': {
+        'metrics_collected': len(metrics),
+        'data_points_sent': len(zabbix_data_points),
+        'zabbix_result': zabbix_result,
+        'success': zabbix_result.get('success', True)
+      },
+      'drift_result': drift_result,
+      'success': zabbix_result.get('success', True)
+    }
+  
+  @monitoring_ns.doc('complete_monitoring_get')
+  def get(self):
+    """
+    Comprehensive monitoring via GET (for compatibility)
+    """
     return self.post()
