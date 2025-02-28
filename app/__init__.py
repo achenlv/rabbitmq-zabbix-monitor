@@ -7,8 +7,8 @@ def create_app():
   app = Flask(__name__)
   
   # Load configuration
-  config = Config()
-  app_config = config.get('app', {})
+  # config = Config()
+  # app_config = config.get('app', {})
   
   # Basic route for health check
   @app.route('/health', methods=['GET'])
