@@ -183,6 +183,7 @@ class EmailSender:
         """Send email using SMTP"""
         try:
             msg = MIMEMultipart('alternative')
+            ### TODO: Add cluster (prod/test) to subject
             msg['Subject'] = subject
             msg['From'] = self.from_address
             msg['To'] = ', '.join(to_list)
