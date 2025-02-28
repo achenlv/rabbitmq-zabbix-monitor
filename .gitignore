@@ -2,3 +2,9 @@ config/config.env
 **/__pycache__/ 
 **/config.env
 scripts/queue_length.sh
+config/config.json
+log/monitor.log
+log/*
+config/psk.key
+_old/*
+.venv/*

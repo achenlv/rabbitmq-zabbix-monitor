@@ -1,5 +1,2 @@
-pika
-requests
-python-dotenv
-schedule
-pyzabbix
+Flask
+flasgger
